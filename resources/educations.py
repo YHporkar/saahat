@@ -2,9 +2,10 @@ from flask import Blueprint, g, jsonify, make_response, request
 from flask_httpauth import HTTPBasicAuth
 from flask_restful import Api, Resource, abort
 from sqlalchemy.exc import SQLAlchemyError
+from marshmallow.exceptions import ValidationError
 
 import status
-from auth import (EducationAuthRequiredResource, access_denied, basic_auth,
+from auth import (EducationAuthRequiredResource, basic_auth,
                   roles_required, token_auth)
 from helpers import PaginationHelper
 from models.EduModel import (Course, CourseSchema, Exam, ExamResult,
@@ -77,10 +78,10 @@ class CourseResource(EducationAuthRequiredResource):
             course.grade = course_dict['grade']
         if 'major' in course_dict:
             course.major = course_dict['major']
-        dumped_course = course_schema.dump(course)
-        validate_errors = course_schema.validate(dumped_course)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            course_schema.load(course_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             course.update()
             return self.get(course_id)
@@ -147,11 +148,10 @@ class LectureResource(EducationAuthRequiredResource):
             lecture.name = lecture_dict['name']
         if 'group' in lecture_dict:
             lecture.group = lecture_dict['group']
-
-        dumped_lecture = lecture_schema.dump(lecture)
-        validate_errors = lecture_schema.validate(dumped_lecture)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            lecture_schema.load(lecture_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             lecture.update()
             return self.get(lecture_id, course_id)
@@ -232,10 +232,10 @@ class LectureSessionResource(EducationAuthRequiredResource):
             lecture_session.subject = lecture_session_dict['subject']
         if 'location' in lecture_session_dict:
             lecture_session.location = lecture_session_dict['location']
-        dumped_lecture_session = lecture_session_schema.dump(lecture_session)
-        validate_errors = lecture_session_schema.validate(dumped_lecture_session)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            lecture_session_schema.load(lecture_session_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             lecture_session.update()
             return self.get(course_id, lecture_id, session_id)
@@ -344,10 +344,10 @@ class LectureUserSessionResource(EducationAuthRequiredResource):
             lecture_user_session.homework_mark = lecture_user_session_dict['homework_mark']
         if 'present' in lecture_user_session_dict:
             lecture_user_session.present = lecture_user_session_dict['present']
-        dumped_lecture_user_session = lecture_user_session_schema.dump(lecture_user_session)
-        validate_errors = lecture_user_session_schema.validate(dumped_lecture_user_session)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            lecture_user_session_schema.load(lecture_user_session_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             lecture_user_session.update()
             return self.get(course_id, lecture_id, session_id, user_id)
@@ -407,10 +407,10 @@ class ExamResource(EducationAuthRequiredResource):
             exam.file = exam_dict['file']
         if 'type' in exam_dict:
             exam.type = exam_dict['type']
-        dumped_exam = exam_schema.dump(exam)
-        validate_errors = exam_schema.validate(dumped_exam)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            exam_schema.load(exam_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             exam.update()
             return self.get(course_id, lecture_id, session_id)
@@ -480,10 +480,10 @@ class ExamResultResource(EducationAuthRequiredResource):
             exam_result.file = exam_dict['file']
         if 'type' in exam_dict:
             exam_result.type = exam_dict['type']
-        dumped_exam_result = exam_result_schema.dump(exam_result)
-        validate_errors = exam_result_schema.validate(dumped_exam_result)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            exam_result_schema.load(exam_result_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             exam_result.update()
             return self.get(course_id, exam_id, user_id)

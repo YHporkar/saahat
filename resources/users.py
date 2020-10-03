@@ -2,19 +2,23 @@ from flask import Blueprint, g, jsonify, make_response, request
 from flask_httpauth import HTTPBasicAuth
 from flask_restful import Api, Resource, abort
 from sqlalchemy.exc import SQLAlchemyError
+from marshmallow.exceptions import ValidationError
 
 import status
-from auth import (AdminAuthRequiredResource, AuthRequiredResource,
-                  access_denied, basic_auth, roles_required, token_auth)
+import datetime
+from auth import (AdminAuthRequiredResource, AuthRequiredResource, MentorAuthRequiredResource,
+                  basic_auth, roles_required, token_auth)
 from helpers import PaginationHelper
 from models.UserModel import (AdminMessageSchema, AdminRoleSchema,
                               AdminUserSchema, AdminStudentSchema, AdminOfficerSchema,
                               Dial, DialSchema, Grade,
                               GradeSchema, Message, MessageSchema,
-                              Notification, NotificationSchema, Officer,
-                              OfficerSchema, RoleSchema, Student,
-                              StudentSchema, User, UserDetails, Friend, FriendSchema,
-                              UserDetailsSchema, UserRoles, UserSchema, TypeSchema, db, ma)
+                              Notification, NotificationSchema,
+                              OfficerSchema, RoleSchema,
+                              StudentSchema, User, UserDetails,
+                              StudentDetails, OfficerDetails,
+                              Friend, FriendSchema, UserDetailsSchema,
+                              UserRoles, UserSchema, TypeSchema, db, ma)
 
 user_api_bp = Blueprint('user_api', __name__)
 
@@ -25,15 +29,13 @@ user_schema = UserSchema()
 type_schema = TypeSchema()
 
 admin_user_schema = AdminUserSchema()
-admin_student_schema = StudentSchema()
-admin_officer_schema = OfficerSchema()
 
 dial_schema = DialSchema()
 role_schema = RoleSchema()
 grade_schema = GradeSchema()
 message_schema = MessageSchema()
 notif_schema = NotificationSchema()
-details_schema = UserDetailsSchema()
+# details_schema = UserDetailsSchema()
 
 admin_message_schema = AdminMessageSchema()
 admin_role_schema = AdminRoleSchema()
@@ -50,13 +52,7 @@ def get_admins():
 class UserResource(AuthRequiredResource):
     def get(self):
         user = User.query.get_or_404(g.user.id)
-        if user.type == 'officer':
-            user = Officer.query.get_or_404(user.id)
-            result = officer_schema.dump(user)
-        elif user.type == 'student':
-            user = Student.query.get_or_404(user.id)
-            result = student_schema.dump(user)
-        # result = user_schema.dump(user)
+        result = user_schema.dump(user)
         return result
 
     def patch(self):
@@ -65,25 +61,23 @@ class UserResource(AuthRequiredResource):
         if 'password' in user_dict:
             user.password = User.set_password(user_dict['password'])
         if 'email' in user_dict:
+            email = user_dict['email']
+            existing_email = User.query.filter_by(email=email).first()
+            if existing_email:
+                response = {'user': 'An user with the same email already exists'}
+                return response, status.HTTP_409_CONFLICT    
             user.email = user_dict['email']
-        if user.type == 'student':
-            user = Student.query.get_or_404(user.id)
-            if 'group' in user_dict:
-                user.group = user_dict['group']
-            if 'grade' in user_dict:
-                user.grade = user_dict['grade']
-            dumped_user = student_schema.dump(user)
-            validate_errors = student_schema.validate(dumped_user)
-        elif user.type == 'officer':
-            user = Officer.query.get_or_404(user.id)
-            dumped_user = officer_schema.dump(user)
-            validate_errors = officer_schema.validate(dumped_user)
-
-        # dumped_user = user_schema.dump(user)
-        # validate_errors = user_schema.validate(dumped_user)
-
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        if 'username' in user_dict:
+            username = user_dict['username']
+            existing_email = User.query.filter_by(username=username).first()
+            if existing_email:
+                response = {'user': 'An user with the same username already exists'}
+                return response, status.HTTP_409_CONFLICT    
+            user.username = user_dict['username']
+        try:
+            user_schema.load(user_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             user.update()
             return self.get()
@@ -100,24 +94,17 @@ class UserListResource(Resource):
         #     response = {'user': 'you have to specify type query param'}
         #     return response, status.HTTP_400_BAD_REQUEST
         query = User.query
-        schema = admin_user_schema
         if 'type' in request.args:
             errors = type_schema.validate(request.args)
             if errors:
                 return errors, status.HTTP_400_BAD_REQUEST
-            type = request.args['type']
-            if type == 'officer':
-                query = Officer.query
-                schema = officer_schema
-            elif type == 'student':
-                query = Student.query
-                schema = student_schema
+            query = User.query.filter_by(type=request.args['type'])
         pagination_helper = PaginationHelper(
             request,
             query=query,
             resource_for_url='user_api.userlistresource',
             key_name='results',
-            schema=schema)
+            schema=admin_user_schema)
         result = pagination_helper.paginate_query()
         return result
 
@@ -126,20 +113,13 @@ class UserListResource(Resource):
         # if not request_dict:
         #     response = {'user': 'No input data provided'}
         #     return response, status.HTTP_400_BAD_REQUEST
-        # errors = user_schema.validate(request_dict)
-        errors = {}
-        if 'type' not in request_dict:
-            errors.update({'type': ["Missing data for required field."]})
+        errors = user_schema.validate(request_dict)
         if errors:
             return errors, status.HTTP_400_BAD_REQUEST
-        type = request_dict['type']
-        if type == 'officer':
-            errors.update(officer_schema.validate(request_dict))
-        elif type == 'student':
-            errors.update(student_schema.validate(request_dict))
         # errors.update(user_schema.validate(request_dict))
         if errors:
             return errors, status.HTTP_400_BAD_REQUEST
+        type = request_dict['type']
         username = request_dict['username']
         password = request_dict['password']
         email = request_dict['email']
@@ -149,23 +129,16 @@ class UserListResource(Resource):
             response = {'user': 'An user with the same username or email already exists'}
             return response, status.HTTP_409_CONFLICT
         try:
-            if type == 'officer':
-                officer = Officer(username=username, password=password, email=email, type=type)
-                officer.add(officer)
-                query = Officer.query.get(officer.id)
-                result = officer_schema.dump(query)
-            elif type == 'student':
-                student = Student(username=username, email=email, password=password, type=type, group=request_dict['group'], grade=request_dict['grade'])
-                student.add(student)
-                query = Student.query.get(student.id)
-                result = student_schema.dump(query)
-            # user = User(username=username, password=password, email=email, type=type)
-            # user.add(user)
-            # query = User.query.get(user.id)
-            # result = user_schema.dump(query)
+            user = User(username=username, password=password, email=email, type=type)
+            user.add(user)
+            query = User.query.get(user.id)
+            result = user_schema.dump(query)
+            for admin in get_admins():
+                message = Message(subject='new user created', text='accept or reject it. user_id={}'.format(user.id), user_id=admin.user_id)
+                message.add(message)
             if type == 'officer':
                 for admin in get_admins():
-                    message = Message(subject='new user created', text='set roles for user: {}'.format(officer.id), user_id=admin.user_id)
+                    message = Message(subject='new officer created', text='set roles for user: {}'.format(user.id), user_id=admin.user_id)
                     message.add(message)
             return result, status.HTTP_201_CREATED
         except SQLAlchemyError as e:
@@ -175,29 +148,62 @@ class UserListResource(Resource):
 
 class UserDetailsResource(AuthRequiredResource):
     def get(self):
-        details = UserDetails.query.filter_by(user_id=g.user.id).first()
-        result = details_schema.dump(details)
+        user = User.query.get_or_404(g.user.id)
+        if user.type == 'student':
+            details = StudentDetails.query.filter_by(user_id=g.user.id).first()
+            result = student_schema.dump(details)
+        else:
+            details = OfficerDetails.query.filter_by(user_id=g.user.id).first()
+            result = officer_schema.dump(details)
         return result
 
     def post(self):
         user_id = g.user.id
         request_dict = request.get_json(force=True)
-        User.query.get_or_404(user_id)
+        user = User.query.get_or_404(user_id)
         if not request_dict:
             response = {'details': 'No input data provided'}
             return response, status.HTTP_400_BAD_REQUEST
-        errors = details_schema.validate(request_dict)
+        if user.type == 'student':
+            errors = student_schema.validate(request_dict)
+        else:
+            errors = officer_schema.validate(request_dict)
         if errors:
             return errors, status.HTTP_400_BAD_REQUEST
         if UserDetails.details_exists(user_id):
             response = {'error': 'A user details already exists'}
             return response, status.HTTP_400_BAD_REQUEST
+        instagram = None
+        fathername = None
+        school = None
+        major = None
+        last_average = None
+        if 'instagram' in request_dict:
+            instagram = request_dict['instagram']
+        if 'school' in request_dict:
+            school = request_dict['school']
+        if 'major' in request_dict:
+            major = request_dict['major']
+        if 'last_average' in request_dict:
+            last_average = request_dict['last_average']
+        if 'fathername' in request_dict:
+            fathername = request_dict['fathername']
         try:
             # create a new UserDetails
-            details = UserDetails(user_id=user_id, kwargs=request_dict)
-            details.add(details)
-            query = UserDetails.query.filter_by(user_id=details.user_id).first()
-            result = details_schema.dump(query)
+            if user.type == 'student':
+                details = StudentDetails(user_id, request_dict['firstname'], request_dict['lastname'],
+                                         instagram, request_dict['birth_date'], request_dict['nat_id'],
+                                         fathername, school, major, last_average, grade, group)
+                details.add(details)
+                query = StudentDetails.query.filter_by(user_id=details.user_id).first()
+                result = student_schema.dump(query)
+            else:
+                details = OfficerDetails(user_id, request_dict['firstname'], request_dict['lastname'],
+                                         instagram, request_dict['birth_date'], request_dict['nat_id'],
+                                         fathername, request_dict['coop_start_date'], request_dict['work_experience'])
+                details.add(details)
+                query = OfficerDetails.query.filter_by(user_id=details.user_id).first()
+                result = officer_schema.dump(query)
             return result, status.HTTP_201_CREATED
         except SQLAlchemyError as e:
             db.session.rollback()
@@ -252,10 +258,10 @@ class DialResource(AuthRequiredResource):
             dial.number = dial_dict['number']
         if 'type' in dial_dict:
             dial.type = dial_dict['type']
-        dumped_dial = dial_schema.dump(dial)
-        validate_errors = dial_schema.validate(dumped_dial)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            dial_schema.load(dial_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             dial.update()
             return self.get(dial_id)
@@ -335,10 +341,10 @@ class GradeResource(AuthRequiredResource):
             grade.degree = grade_dict['degree']
         if 'pic' in grade_dict:
             grade.pic = grade_dict['pic']
-        dumped_grade = grade_schema.dump(grade)
-        validate_errors = grade_schema.validate(dumped_grade)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            grade_schema.load(grade_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             grade.update()
             return self.get(grade_id)
@@ -503,17 +509,15 @@ class MessageListResource(AuthRequiredResource):
 class AdminMessageResource(AdminAuthRequiredResource):
     def patch(self, user_id, message_id):
         message = Message.query.get_or_404(message_id)
-        # notif is for current user or not
-        # user_notif_auth_fail(notif)
         message_dict = request.get_json(force=True)
         if 'text' in message_dict:
             message.text = message_dict['text']
         if 'subject' in message_dict:
             message.subject = message_dict['subject']
-        dumped_message = message_schema.dump(message)
-        validate_errors = message_schema.validate(dumped_message)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            message_schema.load(message_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             message.update()
             query = Message.query.get_or_404(message_id)
@@ -562,51 +566,52 @@ class AdminMessageListResource(AdminAuthRequiredResource):
 class AdminUserResource(AdminAuthRequiredResource):
     def get(self, user_id):
         user = User.query.get_or_404(user_id)
-        if user.type == 'officer':
-            user = Officer.query.get_or_404(user_id)
-            result = admin_officer_schema.dump(user)
-        elif user.type == 'student':
-            user = Student.query.get_or_404(user_id)
-            result = admin_student_schema.dump(user)
-        # result = admin_user_schema.dump(user)
+        result = admin_user_schema.dump(user)
         return result
 
     def patch(self, user_id):
         user = User.query.get_or_404(user_id)
-        request_dict = request.get_json(force=True)
-        dumped_user = user_schema.dump(user)
-        validate_errors = user_schema.validate(dumped_user)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
-
+        user_dict = request.get_json(force=True)
         try:
-            if user.type == 'officer':
-                if request_dict['type'] == 'student':
-                    of = Officer.query.get_or_404(user_id)
-                    of.delete(of)
-                    st = Student(of.username, of.password, of.email, 'student', '0', '0')
-
-            elif user.type == 'officer':
-                st = Student.query.get_or_404(user_id)
-                st.delete(st)
+            user_schema.load(user_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
+        new_type = None
+        if 'type' in user_dict:
+            if user_dict['type'] != user.type:
+                new_type = user_dict['type']
+            user.type = new_type
+            user_details = UserDetails.query.filter_by(user_id=user_id).first()
+        try:
+            if new_type == 'student':
+                if user_details:
+                    new_details = StudentDetails(user_id, user_details.firstname, user_details.lastname,
+                                                user_details.instagram, user_details.birth_date,
+                                                user_details.nat_id, user_details.fathername, '', '', 0, 0, 0)
+                    officer_details = OfficerDetails.query.get(user_id)
+                    officer_details.delete(officer_details)
+                    new_details.add(new_details)
+                roles = UserRoles.query.filter_by(user_id=user_id).all()
+                for role in roles:
+                    role.delete(role)
+            elif new_type == 'officer':
+                if user_details:
+                    new_details = OfficerDetails(user_id, user_details.firstname, user_details.lastname,
+                                                user_details.instagram, user_details.birth_date,
+                                                user_details.nat_id, user_details.fathername, datetime.datetime.now(), 0)
+                    student_details = StudentDetails.query.get(user_id)
+                    student_details.delete(student_details)
+                    new_details.add(new_details)
             user.update()
-            
             return self.get(user_id)
         except SQLAlchemyError as e:
             db.session.rollback()
             resp = {"error": str(e)}
             return resp, status.HTTP_400_BAD_REQUEST
-
     
     def delete(self, user_id):
         user = User.query.get_or_404(user_id)
         try:
-            # if user.type == 'student':
-            #     st = Student.query.get_or_404(user_id)
-            #     st.delete(st)
-            # elif user.type == 'officer':
-            #     of = Officer.query.get_or_404(user_id)
-            #     of.delete(of)
             user.delete(user)
             # response = make_response()
             return '', status.HTTP_204_NO_CONTENT
@@ -615,7 +620,7 @@ class AdminUserResource(AdminAuthRequiredResource):
             resp = {"error": str(e)}
             return resp, status.HTTP_400_BAD_REQUEST
 
-class FriendListResource(AuthRequiredResource):
+class FriendListResource(MentorAuthRequiredResource):
     def get(self, user_id):
         pagination_helper = PaginationHelper(
             request,
@@ -627,6 +632,7 @@ class FriendListResource(AuthRequiredResource):
         return result
     
     def post(self, user_id):
+        User.query.get_or_404(user_id)
         request_dict = request.get_json(force=True)
         if not request_dict:
             response = {'friend': 'No input data provided'}
@@ -636,14 +642,13 @@ class FriendListResource(AuthRequiredResource):
         if errors:
             return errors, status.HTTP_400_BAD_REQUEST
         friend_id = request_dict['friend_id']
+        User.query.get_or_404(friend_id)
         if not Friend.is_unique(user_id, friend_id):
             response = {'error': 'A friend with the same id already exists'}
             return response, status.HTTP_400_BAD_REQUEST
         try:
             # create a new UserRole
-            friend = Friend(
-                friend_id=friend_id,
-                user_id=user_id)
+            friend = Friend(friend_id=friend_id, user_id=user_id)
             friend.add(friend)
             query = Friend.query.filter_by(user_id=user_id, friend_id=friend_id).first()
             result = friend_schema.dump(query)
@@ -653,7 +658,7 @@ class FriendListResource(AuthRequiredResource):
             resp = {"error": str(e)}
             return resp, status.HTTP_400_BAD_REQUEST
 
-class FriendResource(AuthRequiredResource):
+class FriendResource(MentorAuthRequiredResource):
     def delete(self, user_id, friend_id):
         friend = Friend.query.filter_by(user_id=user_id, friend_id=friend_id).first()
         try:

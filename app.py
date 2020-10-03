@@ -14,6 +14,10 @@ def create_app(config_filename):
     from resources.heyats import heyat_api_bp
     from resources.educations import education_api_bp
     from resources.reports import report_api_bp
+    from resources.sports import sport_api_bp
+    from resources.forms import form_api_bp
+    from resources.documents import document_api_bp
+    from resources.accountings import accounting_api_bp
 
     app.register_blueprint(user_api_bp, url_prefix='/api')
     app.register_blueprint(session_api_bp, url_prefix='/api')
@@ -21,5 +25,10 @@ def create_app(config_filename):
     app.register_blueprint(heyat_api_bp, url_prefix='/api')
     app.register_blueprint(education_api_bp, url_prefix='/api')
     app.register_blueprint(report_api_bp, url_prefix='/api')
+    app.register_blueprint(sport_api_bp, url_prefix='/api')
+    app.register_blueprint(form_api_bp, url_prefix='/api')
+    app.register_blueprint(document_api_bp, url_prefix='/api')
+    app.register_blueprint(accounting_api_bp, url_prefix='/api')
+
 
     return app

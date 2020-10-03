@@ -2,9 +2,10 @@ from flask import Blueprint, g, jsonify, make_response, request
 from flask_httpauth import HTTPBasicAuth
 from flask_restful import Api, Resource, abort
 from sqlalchemy.exc import SQLAlchemyError
+from marshmallow.exceptions import ValidationError
 
 import status
-from auth import (AuthRequiredResource, access_denied, basic_auth,
+from auth import (AuthRequiredResource, basic_auth,
                   role_authenticated, get_current_user_role, token_auth)
 from helpers import PaginationHelper
 from models.ReportModel import (CampReport, HeyatReport, LectureReport,
@@ -90,10 +91,10 @@ class ReportResource(AuthRequiredResource):
             return errors, status.HTTP_400_BAD_REQUEST
         if 'description' in request_dict:
             report.description = request_dict['description']
-        dumped_report = report_schema.dump(report)
-        validate_errors = report_schema.validate(dumped_report)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            report_schema.load(report_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             report.update()
             return report_schema.dump(report)
@@ -173,10 +174,10 @@ class MultimediaResource(AuthRequiredResource):
             multimedia.path = request_dict['path']
         if 'format' in request_dict:
             multimedia.format = request_dict['format']
-        dumped_multimedia = multimedia_schema.dump(multimedia)
-        validate_errors = multimedia_schema.validate(dumped_multimedia)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            multimedia_schema.load(multimedia_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             multimedia.update()
             return multimedia_schema.dump(multimedia)

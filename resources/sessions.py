@@ -2,9 +2,10 @@ from flask import Blueprint, g, jsonify, make_response, request
 from flask_httpauth import HTTPBasicAuth
 from flask_restful import Api, Resource, abort
 from sqlalchemy.exc import SQLAlchemyError
+from marshmallow.exceptions import ValidationError
 
 import status
-from auth import (SessionAuthRequiredResource, access_denied, basic_auth,
+from auth import (SessionAuthRequiredResource, basic_auth,
                   roles_required, token_auth)
 from helpers import PaginationHelper
 from models.SessionModel import (Deadline, DeadlineSchema, Session,
@@ -73,10 +74,10 @@ class SessionResource(SessionAuthRequiredResource):
             session.subject = session_dict['subject']
         if 'datetime' in session_dict:
             session.datetime = session_dict['datetime']
-        dumped_session = session_schema.dump(session)
-        validate_errors = session_schema.validate(dumped_session)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            session_schema.load(session_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             session.update()
             return self.get(session_id)
@@ -138,11 +139,10 @@ class SessionDetailsResource(SessionAuthRequiredResource):
             details.location = details_dict['location']
         if 'approvals' in details_dict:
             details.approvals = details_dict['approvals']
-
-        dumped_details = details_schema.dump(details)
-        validate_errors = details_schema.validate(dumped_details)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            details_schema.load(details_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             details.update()
             query = SessionDetails.query.filter_by(session_id=details.session_id).first()
@@ -201,10 +201,10 @@ class SessionUsersResource(SessionAuthRequiredResource):
         session_user_dict = request.get_json(force=True)
         if 'present' in session_user_dict:
             session_user.present = session_user_dict['present']
-        dumped_session_user = session_user_schema.dump(session_user)
-        validate_errors = session_user_schema.validate(dumped_session_user)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            session_user_schema.load(session_user_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             session_user.update()
             return self.get(user_id, session_id)
@@ -277,10 +277,10 @@ class TaskResource(SessionAuthRequiredResource):
         task_dict = request.get_json(force=True)
         if 'present' in task_dict:
             task.present = task_dict['present']
-        dumped_task = task_schema.dump(task_dict)
-        validate_errors = task_schema.validate(dumped_task)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            task_schema.load(task_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             task.update()
             return self.get(session_id, user_id, task_id)
@@ -340,10 +340,10 @@ class DeadlineResource(SessionAuthRequiredResource):
         deadline_dict = request.get_json(force=True)
         if 'expiration_datetime' in deadline_dict:
             deadline.expiration_datetime = deadline_dict['expiration_datetime']
-        dumped_deadline = deadline_schema.dump(deadline_dict)
-        validate_errors = deadline_schema.validate(dumped_deadline)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            deadline_schema.load(deadline_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             deadline.update()
             return self.get(session_id, user_id, task_id, deadline_id)

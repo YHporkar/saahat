@@ -2,9 +2,10 @@ from flask import Blueprint, g, jsonify, make_response, request
 from flask_httpauth import HTTPBasicAuth
 from flask_restful import Api, Resource, abort
 from sqlalchemy.exc import SQLAlchemyError
+from marshmallow.exceptions import ValidationError
 
 import status
-from auth import (HeyatAuthRequiredResource, access_denied, basic_auth,
+from auth import (HeyatAuthRequiredResource, basic_auth,
                   roles_required, token_auth)
 from helpers import PaginationHelper
 from models.HeyatModel import Heyat, HeyatSchema, HeyatUsers, HeyatUsersSchema
@@ -66,23 +67,25 @@ class HeyatResource(HeyatAuthRequiredResource):
 
     def patch(self, heyat_id):
         heyat = Heyat.query.get_or_404(heyat_id)
-        # heyat is for current user or not
-        # user_heyat_auth_fail(heyat)
         heyat_dict = request.get_json(force=True)
-        if 'location' in heyat_dict:
-            heyat.location = heyat_dict['location']
-        if 'subject' in heyat_dict:
-            heyat.subject = heyat_dict['subject']
-        if 'back_time' in heyat_dict:
-            heyat.back_time = heyat_dict['back_time']
-        if 'go_time' in heyat_dict:
-            heyat.go_time = heyat_dict['go_time']
-        if 'cost_per_person' in heyat_dict:
-            heyat.cost_per_person = heyat_dict['cost_per_person']
-        dumped_heyat = heyat_schema.dump(heyat)
-        validate_errors = heyat_schema.validate(dumped_heyat)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        if 'compere' in heyat_dict:
+            heyat.compere = heyat_dict['compere']
+        if 'speaker' in heyat_dict:
+            heyat.speaker = heyat_dict['speaker']
+        if 'singer' in heyat_dict:
+            heyat.singer = heyat_dict['singer']
+        if 'meal' in heyat_dict:
+            heyat.meal = heyat_dict['meal']
+        if 'type' in heyat_dict:
+            heyat.type = heyat_dict['type']
+        if 'reason' in heyat_dict:
+            heyat.reason = heyat_dict['reason']
+        if 'datetime' in heyat_dict:
+            heyat.datetime = heyat_dict['datetime']
+        try:
+            heyat_schema.load(heyat_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             heyat.update()
             return self.get(heyat_id)
@@ -107,7 +110,7 @@ class HeyatUsersListResource(HeyatAuthRequiredResource):
         pagination_helper = PaginationHelper(
             request,
             query=HeyatUsers.query.filter_by(heyat_id=heyat_id),
-            resource_for_url='heyat_api.userpaymentslistresource',
+            resource_for_url='heyat_api.heyatuserslistresource',
             key_name='results',
             schema=heyat_users_schema)
         result = pagination_helper.paginate_query()
@@ -122,10 +125,16 @@ class HeyatUsersListResource(HeyatAuthRequiredResource):
         user_id = request_dict['user_id']
         User.query.get_or_404(user_id)
         present = False
+        description = None
+        rate = None
         if 'present' in request_dict:
             present = request_dict['present']
+        if 'description' in request_dict:
+            description = request_dict['description']
+        if 'rate' in request_dict:
+            rate = request_dict['rate']
         try:
-            heyat_users = HeyatUsers(user_id=user_id, heyat_id=heyat_id, present=present)
+            heyat_users = HeyatUsers(user_id=user_id, heyat_id=heyat_id, present=present, rate=rate, description=description)
             heyat_users.add(heyat_users)
             query = HeyatUsers.query.filter_by(user_id=user_id, heyat_id=heyat_id).first()
             result = heyat_users_schema.dump(query)
@@ -144,12 +153,16 @@ class HeyatUsersResource(HeyatAuthRequiredResource):
     def patch(self, user_id, heyat_id):
         heyat_users = HeyatUsers.query.filter_by(heyat_id=heyat_id, user_id=user_id).first()
         heyat_users_dict = request.get_json(force=True)
-        if 'paid_value' in heyat_users_dict:
-            heyat_users.paid_value = heyat_users_dict['paid_value']
-        dumped_heyat_users = heyat_users_schema.dump(heyat_users)
-        validate_errors = heyat_users_schema.validate(dumped_heyat_users)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        if 'present' in heyat_users_dict:
+            heyat_users.present = heyat_users_dict['present']
+        if 'rate' in heyat_users_dict:
+            heyat_users.rate = heyat_users_dict['rate']
+        if 'description' in heyat_users_dict:
+            heyat_users.description = heyat_users_dict['description']
+        try:
+            heyat_users_schema.load(heyat_users_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             heyat_users.update()
             return self.get(user_id, heyat_id)

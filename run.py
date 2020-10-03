@@ -9,9 +9,15 @@ from apispec.ext.marshmallow import MarshmallowPlugin
 from apispec_webframeworks.flask import FlaskPlugin
 
 from app import create_app
-from auth import basic_auth
+from auth import basic_auth, roles_required, token_auth
 from flask import g, jsonify
 from flask_swagger import swagger
+from models.UserModel import User
+from resources.users import user_schema, db
+
+from sqlalchemy.exc import SQLAlchemyError
+import status
+
 # from flask_login import current_user, LoginManager
 
 
@@ -27,17 +33,6 @@ spec = APISpec(
 )
 
 
-# login_manager.init_app(app)
-
-# @login_manager.user_loader
-# def load_user(user_id):
-#     return User.get(user_id)
-
-# @app.before_request
-# def before_request():
-#     g.user = current_user
-
-
 @app.route('/api/gettoken', methods=['GET'])
 @basic_auth.login_required
 def get_auth_token():
@@ -46,6 +41,23 @@ def get_auth_token():
     """
     token = g.user.generate_auth_token()
     return jsonify({'token': token.decode('ascii')})
+
+@app.route('/api/users/<int:user_id>/accept', methods=['POST'])
+@token_auth.login_required
+@roles_required('admin')
+def accept_user(user_id):
+    user = User.query.get_or_404(user_id)
+    try:
+        user.authorized = 1
+        user.update()
+        return user_schema.dump(user)
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        resp = {"error": str(e)}
+        return resp, status.HTTP_400_BAD_REQUEST
+
+
+
 
 
 with app.test_request_context():

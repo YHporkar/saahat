@@ -37,19 +37,15 @@ class User(db.Model, AddUpdateDelete):
     password = db.Column(db.String(100), nullable=False)
     type = db.Column(db.String(20), nullable=False)
     creation_date = db.Column(db.TIMESTAMP, server_default=db.func.current_timestamp(), nullable=False)
-
+    authorized = db.Column(db.Boolean, default=0, nullable=False)
     details = db.relationship('UserDetails', cascade='all,delete', uselist=False, back_populates='user')
     dials = db.relationship('Dial', cascade='all,delete', back_populates='user')
     grades = db.relationship('Grade', cascade='all,delete', back_populates='user')
     messages = db.relationship('Message', cascade='all,delete', back_populates='user')
-    # socials = db.relationship('SocialAddress', cascade='all,delete', back_populates='user')
     roles = db.relationship('UserRoles', cascade='all,delete', back_populates='user')
-    # friends = db.relationship('Friend', back_populates='user', cascade='all,delete')
-    # accepted = db.Column(db.Boolean, default=False)
 
-    __mapper_args__ = {'polymorphic_identity': 'user',
-                        'polymorphic_on': type}
-
+    # __mapper_args__ = {'polymorphic_identity': 'user',
+    #                     'polymorphic_on': type}
 
     def __init__(self, username, password, email, type):
         self.username = username
@@ -80,64 +76,45 @@ class User(db.Model, AddUpdateDelete):
             return None # invalid token
         user = User.query.get(data['id'])
         return user
+    
+# class Officer(User):
+#     id = db.Column(db.Integer,db.ForeignKey('user.id'), primary_key=True)
 
-class Officer(User):
-    id = db.Column(db.Integer,db.ForeignKey('user.id'), primary_key=True)
+#     __mapper_args__ = {'polymorphic_identity': 'officer'}
 
-    __mapper_args__ = {'polymorphic_identity': 'officer'}
+#     def __init__(self, username, password, email, type):
+#         super().__init__(username, password, email, type)
 
-    def __init__(self, username, password, email, type):
-        super().__init__(username, password, email, type)
+# class Student(User):
+#     id = db.Column(db.Integer,db.ForeignKey('user.id'), primary_key=True)
 
-class Student(User):
-    id = db.Column(db.Integer,db.ForeignKey('user.id'), primary_key=True)
-    grade = db.Column(db.Integer, nullable=False)
-    group = db.Column(db.String(50), nullable=False)
+#     __mapper_args__ = {'polymorphic_identity': 'student'}
 
-    __mapper_args__ = {'polymorphic_identity': 'student'}
-
-    def __init__(self, username, password, email, type, grade, group):
-        super().__init__(username, password, email, type)
-        self.grade = grade
-        self.group = group
+#     def __init__(self, username, password, email, type):
+#         super().__init__(username, password, email, type)
 
 class UserDetails(db.Model, AddUpdateDelete):
     # id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer,db.ForeignKey('user.id'), primary_key=True)
     user = db.relationship('User', back_populates='details')
-    firstname = db.Column(db.String(50), nullable=False)
-    lastname = db.Column(db.String(50), nullable=False)
+    profile_photo = db.Column(db.String(50))
+    firstname = db.Column(db.String(50))
+    lastname = db.Column(db.String(50))
     instagram = db.Column(db.String(20))
-    birth_date = db.Column(db.DateTime, nullable=False)
-    nat_id = db.Column(db.String(10), nullable=False)
+    birth_date = db.Column(db.DateTime)
+    nat_id = db.Column(db.String(10))
     fathername = db.Column(db.String(50))
-    user_pic = db.Column(db.String(100))
-    nat_pic = db.Column(db.String(100))
-    birth_certificate_pic = db.Column(db.String(100))
 
-    def __init__(self, user_id, **kwargs):
+    def __init__(self, user_id, firstname, lastname, instagram, birth_date, nat_id, fathername, profile_photo):
         self.user_id = user_id
-        details_dict = kwargs.get('kwargs')
+        self.firstname = firstname
+        self.lastname = lastname
+        self.instagram = instagram
+        self.birth_date = birth_date
+        self.nat_id = nat_id
+        self.fathername = fathername
+        self.profile_photo = profile_photo
         
-        if 'firstname' in details_dict:
-            self.firstname = details_dict['firstname']
-        if 'lastname' in details_dict:
-            self.lastname = details_dict['lastname']
-        if 'instagram' in details_dict:
-            self.instagram = details_dict['instagram']
-        if 'birth_date' in details_dict:
-            self.birth_date = details_dict['birth_date']
-        if 'nat_id' in details_dict:
-            self.nat_id = details_dict['nat_id']
-        if 'fathername' in details_dict:
-            self.fathername = details_dict['fathername']
-        if 'user_pic' in details_dict:
-            self.user_pic = details_dict['user_pic']
-        if 'nat_pic' in details_dict:
-            self.nat_pic = details_dict['nat_pic']
-        if 'birth_certificate_pic' in details_dict:
-            self.birth_certificate_pic = details_dict['birth_certificate_pic']
-
     @classmethod
     def details_exists(cls, user_id):
         existing_details = cls.query.filter_by(user_id=user_id).first()
@@ -145,9 +122,36 @@ class UserDetails(db.Model, AddUpdateDelete):
             return False
         return True
 
+class StudentDetails(UserDetails):
+    id = db.Column(db.Integer, db.ForeignKey('user_details.user_id'), primary_key=True)
+    school = db.Column(db.String(50))
+    major = db.Column(db.String(50))
+    last_average = db.Column(db.Float)
+    grade = db.Column(db.Integer, nullable=False)
+    group = db.Column(db.String(50), nullable=False)
+
+    def __init__(self, user_id, firstname, lastname, instagram, birth_date, nat_id, fathername, school, major, last_average, grade, group):
+        super().__init__(user_id, firstname, lastname, instagram, birth_date, nat_id, fathername)
+        self.school = school
+        self.major = major
+        self.last_average = last_average
+        self.grade = grade
+        self.group = group
+
+class OfficerDetails(UserDetails):
+    id = db.Column(db.Integer,db.ForeignKey('user_details.user_id'), primary_key=True)
+    coop_start_date = db.Column(db.DateTime, nullable=False)
+    work_experience = db.Column(db.Integer, nullable=False)
+    expenses = db.relationship('Expense', back_populates='user')
+
+    def __init__(self, user_id, firstname, lastname, instagram, birth_date, nat_id, fathername, coop_start_date, work_experience):
+        super().__init__(user_id, firstname, lastname, instagram, birth_date, nat_id, fathername)
+        self.coop_start_date = coop_start_date
+        self.work_experience = work_experience
+
 class RolesEnum(Enum):
     ADMIN = 0
-    ADVISER = 1
+    MENTOR = 1
     CAMP = 2
     SESSION = 3
     HEYAT = 4
@@ -155,7 +159,8 @@ class RolesEnum(Enum):
     ACCOUNTING = 6
     DOCUMENT = 7
     FORM = 8
-    REPORT = 9
+    SPORT = 9
+    REPORT = 10
 
 class UserRoles(db.Model, AddUpdateDelete):
     id = db.Column(db.Integer,primary_key=True)
@@ -242,7 +247,6 @@ class Notification(db.Model, AddUpdateDelete):
     message = db.relationship('Message', back_populates='notification')
     # text = db.relationship('Message', back_populates='subject', foreign_keys=[message_id])
     text = db.Column(db.String(100))
-    active = db.Column(db.Boolean, default=1)
 
     def __init__(self, message_id):
         self.message_id = message_id
@@ -255,7 +259,7 @@ class NotificationSchema(ma.Schema):
 class UserSchema(ma.Schema):
     # id = fields.Integer(dump_only=True)
     username = fields.String(required=True, validate=validate.Regexp(regex=r'^(?=.{5,20}$)(?![_.])(?!.*[_.]{2})[a-zA-Z0-9._]+(?<![_.])$'))
-    password = fields.String(required=True)
+    password = fields.String(required=True, load_only=True)
     type = fields.String(required=True, validate=validate.OneOf(choices=['student', 'officer']))
     email = fields.Email(required=True)
     creation_date = fields.DateTime()
@@ -273,13 +277,6 @@ class UserSchema(ma.Schema):
     class Meta:
         ordered = True
 
-class StudentSchema(UserSchema):
-    group = fields.Integer(required=True)
-    grade = fields.String(required=True)
-
-class OfficerSchema(UserSchema):
-    pass
-
 class AdminUserSchema(UserSchema):
     # url = ma.URLFor('user_api.adminuserresource', user_id='<id>', _external=True)
     _links = ma.Hyperlinks(
@@ -291,12 +288,6 @@ class AdminUserSchema(UserSchema):
          }
     )
     
-class AdminStudentSchema(StudentSchema):
-    url = ma.URLFor('user_api.adminuserresource', user_id='<id>', _external=True)
-
-class AdminOfficerSchema(OfficerSchema):
-    url = ma.URLFor('user_api.adminuserresource', user_id='<id>', _external=True)
-
 class MessageSchema(ma.Schema):
     subject = fields.String(required=True)
     text = fields.String(required=True)
@@ -317,24 +308,39 @@ class GradeSchema(ma.Schema):
 class DialSchema(ma.Schema): 
     # id = fields.Integer(dump_only=True)
     number = fields.String(required=True, validate=validate.Length(equal=11), allow_none=True)
-    type = fields.String(required=True, validate=validate.OneOf(choices=['telephone', 'mobile']))
+    type = fields.String(required=True, validate=validate.OneOf(choices=['home', 'mobile', 'work']))
     # user = fields.Nested("UserSchema", only=['username'])
     url = ma.URLFor('user_api.dialresource', dial_id='<id>')
     class Meta:
         ordered = True
 
 class UserDetailsSchema(ma.Schema):
-    nat_id = fields.String(validate=validate.Length(equal=10), allow_none=True, required=True)
-    birth_date = fields.DateTime(allow_none=True, required=True)
-    instagram = fields.String(validate=validate.Regexp(r'^(?!.*\.\.)(?!.*\.$)[^\W][\w.]{0,29}$'), allow_none=True)
-    firstname = fields.String(allow_none=True, required=True)
-    lastname = fields.String(allow_none=True, required=True)
-    fathername = fields.String(allow_none=True)
-    user_pic = fields.String(allow_none=True)
-    nat_pic = fields.String(allow_none=True, required=True)
-    birth_certificate_pic = fields.String(allow_none=True)
-    class Meta:
-        ordered = True
+    nat_id = fields.String(validate=validate.Length(equal=10))
+    birth_date = fields.Date()
+    instagram = fields.String(validate=validate.Regexp(r'^(?!.*\.\.)(?!.*\.$)[^\W][\w.]{0,29}$'))
+    firstname = fields.String()
+    lastname = fields.String()
+    fathername = fields.String()
+
+class StudentSchema(UserDetailsSchema):
+    group = fields.Integer(required=True)
+    grade = fields.String(required=True)
+    school = fields.String()
+    major = fields.String()
+    last_average = fields.Integer()
+
+class OfficerSchema(UserDetailsSchema):
+    coop_start_date = fields.Date(required=True)
+    work_experience = fields.Integer(required=True)
+    _links = ma.Hyperlinks(
+        {"expenses": ma.URLFor('expense_api.expenselistresource')}
+    )
+
+class AdminStudentSchema(StudentSchema):
+    url = ma.URLFor('user_api.adminuserresource', user_id='<id>', _external=True)
+
+class AdminOfficerSchema(OfficerSchema):
+    url = ma.URLFor('user_api.adminuserresource', user_id='<id>', _external=True)
 
 class RoleSchema(ma.Schema):
     # id = fields.Integer(dump_only=True)
@@ -358,7 +364,7 @@ class Friend(db.Model, AddUpdateDelete):
     )
     
     @classmethod
-    def is_unique(user_id, friend_id):
+    def is_unique(cls, user_id, friend_id):
         if Friend.query.filter_by(user_id=user_id, friend_id=friend_id).first() or Friend.query.filter_by(user_id=friend_id, friend_id=user_id).first():
             return False
         return True
@@ -368,5 +374,4 @@ class Friend(db.Model, AddUpdateDelete):
         self.friend_id = friend_id
 
 class FriendSchema(ma.Schema):
-    first_user_id = fields.Integer(required=True)
-    second_user_id = fields.Integer(required=True)
+    friend_id = fields.Integer(required=True)

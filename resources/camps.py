@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify, make_response
 from flask_restful import Api, Resource, abort
 from sqlalchemy.exc import SQLAlchemyError
+from marshmallow.exceptions import ValidationError
+
 import status
 from flask_httpauth import HTTPBasicAuth
 from flask import g
@@ -10,7 +12,7 @@ from models.CampModel import Camp, UserPayments
 from models.CampModel import CampSchema, UserPaymentSchema
 
 from helpers import PaginationHelper
-from auth import CampAuthRequiredResource, basic_auth, roles_required, access_denied, token_auth
+from auth import CampAuthRequiredResource, basic_auth, roles_required, token_auth
 
 
 camp_api_bp = Blueprint('camp_api', __name__)
@@ -75,10 +77,10 @@ class CampResource(CampAuthRequiredResource):
             camp.go_time = camp_dict['go_time']
         if 'cost_per_person' in camp_dict:
             camp.cost_per_person = camp_dict['cost_per_person']
-        dumped_camp = camp_schema.dump(camp)
-        validate_errors = camp_schema.validate(dumped_camp)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            camp_schema.load(camp_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             camp.update()
             return self.get(camp_id)
@@ -143,10 +145,10 @@ class UserPaymentsResource(CampAuthRequiredResource):
         user_payments_dict = request.get_json(force=True)
         if 'paid_value' in user_payments_dict:
             user_payments.paid_value = user_payments_dict['paid_value']
-        dumped_user_payments = user_payments_schema.dump(user_payments)
-        validate_errors = user_payments_schema.validate(dumped_user_payments)
-        if validate_errors:
-            return validate_errors, status.HTTP_400_BAD_REQUEST
+        try:
+            user_payments_schema.load(user_payments_dict, partial=True)
+        except ValidationError as e:
+            return e.args[0], status.HTTP_400_BAD_REQUEST
         try:
             user_payments.update()
             return self.get(user_id, camp_id)
