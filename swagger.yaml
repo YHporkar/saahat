@@ -1,0 +1,3122 @@
+swagger: "2.0"
+info:
+  description: This is a simple API
+  version: 1.0.0
+  title: Simple Inventory API
+  # put the contact info for your development or API team
+  contact:
+    email: you@your-company.com
+
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+# tags are used for organizing operations
+tags:
+  - name: token
+  - name: users
+  - name: user info
+  - name: roles
+  - name: dials
+  - name: grades
+  - name: messages
+  - name: sessions
+  - name: session info
+  - name: session users
+  - name: tasks
+  - name: deadlines
+  - name: heyats
+  - name: heyat users
+  - name: camps
+  - name: camp users
+  - name: courses
+  - name: course lectures
+  - name: lecture users
+  - name: lecture sessions
+  - name: lecture session users
+  - name: lecture exams
+  - name: lecture exam users
+  - name: reports
+  - name: multimedias
+paths:
+  /gettoken:
+    get:
+      tags:
+        - token
+      summary: get token to access api
+      operationId: getToken
+      produces:
+        - application/json
+      responses:
+        200:
+          description: return token code
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+  /users:
+    get:
+      tags:
+        - users
+      summary: get all users data | Admin Access
+      operationId: getUsers
+      produces:
+        - application/json
+      responses:
+        200:
+          description: returns users list data
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/user"
+    post:
+      tags:
+        - users
+      summary: register new user
+      operationId: addUser
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: user
+          description: the new user object
+          required: true
+          schema:
+            $ref: "#/definitions/user"
+      responses:
+        201:
+          description: user created
+        400:
+          description: invalid input, object invalid
+        409:
+          description: an existing user already exists
+  /users/{userId}:
+    get:
+      tags:
+        - users
+      summary: get user data | Admin Access
+      operationId: getUser
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: userId
+          type: integer
+          required: true
+      responses:
+        200:
+          schema:
+            $ref: "#/definitions/user"
+          description: OK
+    patch:
+      tags:
+        - users
+      summary: change user type | Admin Access
+      operationId: getUser
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: body
+          name: type
+          required: true
+          schema:
+            type: string
+            enum:
+              - student
+              - officer
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/user"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - users
+      summary: delete user | Admin Access
+      operationId: deleteUser
+      parameters:
+        - in: path
+          name: userId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+  /users/{userId}/roles:
+    get:
+      tags:
+        - roles
+      summary: get all roles of user | Admin Access
+      operationId: getUserRoles
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: userId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: returns user roles
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/roleAdmin"
+    post:
+      tags:
+        - roles
+      summary: create new user role | Admin Access
+      operationId: addUserRole
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: body
+          name: role
+          description: the new role object
+          required: true
+          schema:
+            $ref: "#/definitions/roleAdmin"
+      responses:
+        201:
+          description: user role created
+        400:
+          description: invalid input, object invalid
+        409:
+          description: an existing role already exists for user
+  /users/{userId}/roles/{roleId}:
+    delete:
+      tags:
+        - roles
+      summary: delete role | Admin Access
+      operationId: deleteRole
+      parameters:
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: path
+          name: roleId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+  /users/{userId}/messages:
+    post:
+      tags:
+        - messages
+      summary: create new user message | Admin Access
+      operationId: addMessage
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: body
+          name: message
+          description: the new message object
+          required: true
+          schema:
+            $ref: "#/definitions/messageAdmin"
+      responses:
+        201:
+          description: message created
+        400:
+          description: invalid input, object invalid
+        409:
+          description: an existing message already exists for user
+  /users/{userId}/messages/{messageId}:
+    patch:
+      tags:
+        - messages
+      summary: edit a message | Admin Access
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: path
+          name: messageId
+          type: integer
+          required: true
+        - in: body
+          name: message object
+          schema:
+            $ref: "#/definitions/messageAdmin"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/messageAdmin"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - messages
+      summary: delete message | Admin Access
+      operationId: deleteMessage
+      parameters:
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: path
+          name: messageId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+  /users/{userId}/friends:
+    get:
+      tags:
+        - friends
+      summary: get all friends of user | Mentor Access
+      operationId: getUserRoles
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: userId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: returns user friends
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/friend"
+    post:
+      tags:
+        - friends
+      summary: create new user friend | Mentor Access
+      operationId: addUserRole
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: body
+          name: friend
+          description: the new friend object
+          required: true
+          schema:
+            $ref: "#/definitions/friend"
+      responses:
+        201:
+          description: user friend created
+        400:
+          description: invalid input, object invalid
+        409:
+          description: an existing friend already exists for user
+  /users/{userId}/friends/{friendId}:
+    delete:
+      tags:
+        - friends
+      summary: delete friend | Mentor Access
+      operationId: deleteRole
+      parameters:
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: path
+          name: friendId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+
+  /users/self:
+    get:
+      tags:
+        - users
+      summary: get Me
+      description: get self user object
+      operationId: getME
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+    patch:
+      tags:
+        - users
+      summary: edit user data
+      operationId: editUser
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: user
+          description: user object data to edit
+          schema:
+            $ref: "#/definitions/user"
+      responses:
+        200:
+          description: OK
+        400:
+          description: invalid input, object invalid
+  /users/self/details:
+    get:
+      tags:
+        - user info
+      summary: get my info
+      description: more informations about me
+      produces:
+        - application/json
+      responses:
+        200:
+          description: return user informations
+          schema:
+            $ref: "#/definitions/userInfo"
+    post:
+      tags:
+        - user info
+      summary: create my new information object
+      description: add more information about me
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: user information
+          schema:
+            oneOf:
+              - $ref: "#/definitions/officerInfo"
+              - $ref: "#/definitions/studentInfo"
+            discriminator: user type
+      responses:
+        200:
+          description: OK
+        400:
+          description: invalid input, object invalid
+    patch:
+      tags:
+        - user info
+      summary: edit my informations
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: user information
+          schema:
+            $ref: "#/definitions/userInfo"
+      responses:
+        200:
+          description: OK
+        400:
+          description: invalid input, object invalid
+  /users/self/dials:
+    get:
+      tags:
+        - dials
+      summary: get my dials
+      operationId: getDials
+      produces:
+        - application/json
+      responses:
+        200:
+          description: returns my dials list
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/dial"
+    post:
+      tags:
+        - dials
+      summary: create new dial
+      operationId: addDial
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: dial
+          description: the new dial object
+          required: true
+          schema:
+            $ref: "#/definitions/dial"
+      responses:
+        201:
+          description: dial created
+        400:
+          description: invalid input, object invalid
+        409:
+          description: an existing dial already exists
+  /users/self/dials/{dialId}:
+    get:
+      tags:
+        - dials
+      summary: get a dial
+      operationId: getDial
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: dialId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: returns a dial
+          schema:
+            $ref: "#/definitions/dial"
+    patch:
+      tags:
+        - dials
+      summary: edit a dial
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: dialId
+          type: integer
+          required: true
+        - in: body
+          name: dial object
+          schema:
+            $ref: "#/definitions/dial"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/dial"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - dials
+      summary: delete dial
+      operationId: deleteDial
+      parameters:
+        - in: path
+          name: dialId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+  /users/self/grades:
+    get:
+      tags:
+        - grades
+      summary: get my grades
+      operationId: getGrades
+      produces:
+        - application/json
+      responses:
+        200:
+          description: returns my grades list
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/grade"
+    post:
+      tags:
+        - grades
+      summary: create new grade
+      operationId: addGrade
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: grade
+          description: the new grade object
+          required: true
+          schema:
+            $ref: "#/definitions/grade"
+      responses:
+        201:
+          description: grade created
+        400:
+          description: invalid input, object invalid
+        409:
+          description: an existing grade already exists
+  /users/self/grades/{gradeId}:
+    get:
+      tags:
+        - grades
+      summary: get a grade
+      operationId: getGrade
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: gradeId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: returns a grade
+          schema:
+            $ref: "#/definitions/grade"
+    patch:
+      tags:
+        - grades
+      summary: edit a grade
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: gradeId
+          type: integer
+          required: true
+        - in: body
+          name: grade object
+          schema:
+            $ref: "#/definitions/grade"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/grade"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - grades
+      summary: delete grade
+      operationId: deleteGrade
+      parameters:
+        - in: path
+          name: gradeId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+  /users/self/roles:
+    get:
+      tags:
+        - roles
+      summary: get my roles
+      operationId: getRoles
+      produces:
+        - application/json
+      responses:
+        200:
+          description: returns my roles list
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/role"
+  /users/self/messages:
+    get:
+      tags:
+        - messages
+      summary: get my messages
+      operationId: getMessages
+      produces:
+        - application/json
+      parameters:
+        - in: query
+          name: filter
+          type: string
+          enum:
+            - read
+            - unread
+      responses:
+        200:
+          description: returns my messages list
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/message"
+
+  /sessions:
+    get:
+      tags:
+        - sessions
+      summary: get all sessions data | Session Access
+      operationId: getSessions
+      produces:
+        - application/json
+      responses:
+        200:
+          description: return sessions list data
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/session"
+    post:
+      tags:
+        - sessions
+      summary: create new session | Session Access
+      operationId: addSession
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: session
+          description: the new session object
+          required: true
+          schema:
+            $ref: "#/definitions/session"
+      responses:
+        201:
+          description: session created
+        400:
+          description: invalid input, object invalid
+        409:
+          description: an existing session already exists
+  /sessions/{sessionId}:
+    get:
+      tags:
+        - sessions
+      summary: get session | Session Access
+      operationId: getSession
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/session"
+    patch:
+      tags:
+        - sessions
+      summary: edit session | Session Access
+      operationId: editSession
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: body
+          name: session object
+          schema:
+            $ref: "#/definitions/session"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/session"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - sessions
+      summary: delete session | Session Access
+      operationId: deleteSession
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+  /sessions/{sessionId}/details:
+    get:
+      tags:
+        - session info
+      summary: get session info | Session Access
+      description: more informations about session
+      operationId: getSessionInfo
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: return session informations
+          schema:
+            $ref: "#/definitions/sessionInfo"
+    post:
+      tags:
+        - session info
+      summary: create new session information object | Session Access
+      description: add more information about session
+      operationId: addSessionInfo
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: body
+          name: session information
+          schema:
+            $ref: "#/definitions/sessionInfo"
+      responses:
+        200:
+          description: OK
+        400:
+          description: invalid input, object invalid
+    patch:
+      tags:
+        - session info
+      summary: edit session informations | Session Access
+      operationId: editSessionInfo
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: body
+          name: user information
+          schema:
+            $ref: "#/definitions/sessionInfo"
+      responses:
+        200:
+          description: OK
+        400:
+          description: invalid input, object invalid
+  /sessions/{sessionId}/users:
+    get:
+      tags:
+        - session users
+      summary: get session users | Session Access
+      description: get users invited to session
+      operationId: getSessionUsers
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: return session users
+          schema:
+            $ref: "#/definitions/sessionUser"
+    post:
+      tags:
+        - session users
+      summary: add a user to session | Session Access
+      operationId: addSessionUser
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: body
+          name: session user
+          schema:
+            $ref: "#/definitions/sessionUser"
+      responses:
+        200:
+          description: OK
+        400:
+          description: invalid input, object invalid
+  /sessions/{sessionId}/users/{userId}:
+    get:
+      tags:
+        - session users
+      summary: get user of session | Session Access
+      operationId: getSessionUser
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/sessionUser"
+    patch:
+      tags:
+        - session users
+      summary: edit user of session | Session Access
+      operationId: editSessionUser
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: body
+          name: user object
+          schema:
+            $ref: "#/definitions/sessionUser"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/sessionUser"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - session users
+      summary: delete user of session | Session Access
+      operationId: deleteSessionUser
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+  /sessions/{sessionId}/users/{userId}/tasks:
+    get:
+      tags:
+        - tasks
+      summary: get all tasks of user in session | Session Access
+      operationId: getTasks
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: return tasks list data
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/task"
+    post:
+      tags:
+        - tasks
+      summary: create new task | Session Access
+      description: create new task for user in session
+      operationId: addTask
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: body
+          name: task
+          description: the new task object
+          required: true
+          schema:
+            $ref: "#/definitions/task"
+      responses:
+        201:
+          description: task created
+        400:
+          description: invalid input, object invalid
+  /sessions/{sessionId}/users/{userId}/tasks/{taskId}:
+    get:
+      tags:
+        - tasks
+      summary: get task of user in session | Session Access
+      operationId: getTask
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: path
+          name: taskId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/task"
+    patch:
+      tags:
+        - tasks
+      summary: edit task of user in session | Session Access
+      operationId: editTask
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: path
+          name: taskId
+          type: integer
+          required: true
+        - in: body
+          name: task object
+          schema:
+            $ref: "#/definitions/task"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/task"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - tasks
+      summary: delete task of user in session | Session Access
+      operationId: deleteTask
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: path
+          name: taskId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+  /sessions/{sessionId}/users/{userId}/tasks/{taskId}/deadlines:
+    get:
+      tags:
+        - deadlines
+      summary: get all deadlines of a task  | Session Access
+      operationId: getDeadlines
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: path
+          name: taskId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: return deadlines list data
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/deadline"
+    post:
+      tags:
+        - deadlines
+      summary: create new deadline | Session Access
+      description: create new deadline for task
+      operationId: addDeadline
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: path
+          name: taskId
+          type: integer
+          required: true
+        - in: body
+          name: deadline
+          description: the new deadline object
+          required: true
+          schema:
+            $ref: "#/definitions/deadline"
+      responses:
+        201:
+          description: deadline created
+        400:
+          description: invalid input, object invalid
+  /sessions/{sessionId}/users/{userId}/tasks/{taskId}/deadlines/{deadlineId}:
+    get:
+      tags:
+        - deadlines
+      summary: get deadline of task | Session Access
+      operationId: getDeadline
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: path
+          name: taskId
+          type: integer
+          required: true
+        - in: path
+          name: deadlineId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/deadline"
+    patch:
+      tags:
+        - deadlines
+      summary: edit deadline of task | Session Access
+      operationId: editDeadline
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: path
+          name: taskId
+          type: integer
+          required: true
+        - in: path
+          name: deadlineId
+          type: integer
+          required: true
+        - in: body
+          name: deadline object
+          schema:
+            $ref: "#/definitions/deadline"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/deadline"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - deadlines
+      summary: delete deadline of a task | Session Access
+      operationId: deleteDeadline
+      parameters:
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: path
+          name: taskId
+          type: integer
+          required: true
+        - in: path
+          name: deadlineId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+
+  /heyats:
+    get:
+      tags:
+        - heyats
+      summary: get all heyats data | Heyat Access
+      operationId: getHeyats
+      produces:
+        - application/json
+      responses:
+        200:
+          description: return heyats list data
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/heyat"
+    post:
+      tags:
+        - heyats
+      summary: create new heyat | Heyat Access
+      operationId: addHeyat
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: heyat
+          description: the new heyat object
+          required: true
+          schema:
+            $ref: "#/definitions/heyat"
+      responses:
+        201:
+          description: heyat created
+        400:
+          description: invalid input, object invalid
+  /heyats/{heyatId}:
+    get:
+      tags:
+        - heyats
+      summary: get heyat | Heyat Access
+      operationId: getHeyat
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: heyatId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/heyat"
+    patch:
+      tags:
+        - heyats
+      summary: edit heyat | Heyat Access
+      operationId: editHeyat
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: heyatId
+          type: integer
+          required: true
+        - in: body
+          name: heyat object
+          schema:
+            $ref: "#/definitions/heyat"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/heyat"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - heyats
+      summary: delete heyat | Heyat Access
+      operationId: deleteHeyat
+      parameters:
+        - in: path
+          name: heyatId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+  /heyat/{heyatId}/users:
+    get:
+      tags:
+        - heyat users
+      summary: get heyat users | Heyat Access
+      description: get users present in heyat
+      operationId: getHeyatUsers
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: heyatId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: return heyat users
+          schema:
+            $ref: "#/definitions/heyatUser"
+    post:
+      tags:
+        - heyat users
+      summary: add a user to heyat | Heyat Access
+      operationId: addHeyatUser
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: heyatId
+          type: integer
+          required: true
+        - in: body
+          name: heyat user
+          schema:
+            $ref: "#/definitions/heyatUser"
+      responses:
+        200:
+          description: OK
+        400:
+          description: invalid input, object invalid
+  /heyat/{heyatId}/users/{userId}:
+    get:
+      tags:
+        - heyat users
+      summary: get user of heyat | Heyat Access
+      operationId: getHeyatUser
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: heyatId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/heyatUser"
+    patch:
+      tags:
+        - heyat users
+      summary: edit user of heyat | Heyat Access
+      operationId: editHeyatUser
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: heyatId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: body
+          name: user object
+          schema:
+            $ref: "#/definitions/heyatUser"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/heyatUser"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - heyat users
+      summary: delete user of heyat | Heyat Access
+      operationId: deleteHeyatUser
+      parameters:
+        - in: path
+          name: heyatId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+
+  /camps:
+    get:
+      tags:
+        - camps
+      summary: get all camps data | Camp Access
+      operationId: getCamps
+      produces:
+        - application/json
+      responses:
+        200:
+          description: return camps list data
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/camp"
+    post:
+      tags:
+        - camps
+      summary: create new camp | Camp Access
+      operationId: addCamp
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: camp
+          description: the new camp object
+          required: true
+          schema:
+            $ref: "#/definitions/camp"
+      responses:
+        201:
+          description: camp created
+        400:
+          description: invalid input, object invalid
+  /camps/{campId}:
+    get:
+      tags:
+        - camps
+      summary: get camp | Camp Access
+      operationId: getCamp
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: campId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/camp"
+    patch:
+      tags:
+        - camps
+      summary: edit camp | Camp Access
+      operationId: editCamp
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: campId
+          type: integer
+          required: true
+        - in: body
+          name: camp object
+          schema:
+            $ref: "#/definitions/camp"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/camp"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - camps
+      summary: delete camp | Camp Access
+      operationId: deleteCamp
+      parameters:
+        - in: path
+          name: campId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+  /camp/{campId}/users:
+    get:
+      tags:
+        - camp users
+      summary: get camp users | Camp Access
+      description: get users present in camp
+      operationId: getCampUsers
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: campId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: return camp users
+          schema:
+            $ref: "#/definitions/campUser"
+    post:
+      tags:
+        - camp users
+      summary: add a user to camp | Camp Access
+      operationId: addCampUser
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: campId
+          type: integer
+          required: true
+        - in: body
+          name: camp user
+          schema:
+            $ref: "#/definitions/campUser"
+      responses:
+        200:
+          description: OK
+        400:
+          description: invalid input, object invalid
+  /camp/{campId}/users/{userId}:
+    get:
+      tags:
+        - camp users
+      summary: get user of camp | Camp Access
+      operationId: getCampUser
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: campId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/campUser"
+    patch:
+      tags:
+        - camp users
+      summary: edit user of camp | Camp Access
+      operationId: editCampUser
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: campId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: body
+          name: user object
+          schema:
+            $ref: "#/definitions/campUser"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/campUser"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - camp users
+      summary: delete user of camp | Camp Access
+      operationId: deleteCampUser
+      parameters:
+        - in: path
+          name: campId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+
+  /courses:
+    get:
+      tags:
+        - courses
+      summary: get all courses data | Course Access
+      operationId: getCourses
+      produces:
+        - application/json
+      responses:
+        200:
+          description: return courses list data
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/course"
+    post:
+      tags:
+        - courses
+      summary: create new course | Course Access
+      operationId: addCourse
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: course
+          description: the new course object
+          required: true
+          schema:
+            $ref: "#/definitions/course"
+      responses:
+        201:
+          description: course created
+        400:
+          description: invalid input, object invalid
+  /courses/{courseId}:
+    get:
+      tags:
+        - courses
+      summary: get course | Course Access
+      operationId: getCourse
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/course"
+    patch:
+      tags:
+        - courses
+      summary: edit course | Course Access
+      operationId: editCourse
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: body
+          name: course object
+          schema:
+            $ref: "#/definitions/course"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/course"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - courses
+      summary: delete course | Course Access
+      operationId: deleteCourse
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+  /courses/{courseId}/lectures:
+    get:
+      tags:
+        - course lectures
+      summary: get course lectures | Education Access
+      description: get lectures of course
+      operationId: getCourseLectures
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: return course lectures
+          schema:
+            $ref: "#/definitions/lecture"
+    post:
+      tags:
+        - course lectures
+      summary: add a lecture to course | Education Access
+      operationId: addCourseLecture
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: body
+          name: course lecture
+          schema:
+            $ref: "#/definitions/lecture"
+      responses:
+        200:
+          description: OK
+        400:
+          description: invalid input, object invalid
+  /courses/{courseId}/lectures/{lectureId}:
+    get:
+      tags:
+        - course lectures
+      summary: get lecture of course | Education Access
+      operationId: getCourseLecture
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/lecture"
+    patch:
+      tags:
+        - course lectures
+      summary: edit lecture of course | Education Access
+      operationId: editCourseLecture
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: body
+          name: lecture object
+          schema:
+            $ref: "#/definitions/lecture"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/lecture"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - course lectures
+      summary: delete lecture of course | Course Access
+      operationId: deleteCourseLecture
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+  /courses/{courseId}/lectures/{lectureId}/users:
+    get:
+      tags:
+        - lecture users
+      summary: get lecture users | Education Access
+      description: get users present in lecture
+      operationId: getLectureUsers
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: return lecture users
+          schema:
+            $ref: "#/definitions/lectureUsers"
+    post:
+      tags:
+        - lecture users
+      summary: add a lecture user | Education Access
+      operationId: addLectureUser
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: body
+          name: lecture user
+          schema:
+            $ref: "#/definitions/lectureUsers"
+      responses:
+        200:
+          description: OK
+        400:
+          description: invalid input, object invalid
+  /courses/{courseId}/lectures/{lectureId}/users/{userId}:
+    get:
+      tags:
+        - lecture users
+      summary: get user of lecture | Education Access
+      operationId: getLectureUser
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/lectureUsers"
+    patch:
+      tags:
+        - lecture users
+      summary: edit user of lecture | Education Access
+      operationId: editLectureUser
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: body
+          name: user object
+          schema:
+            $ref: "#/definitions/lectureUsers"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/lectureUsers"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - lecture users
+      summary: delete user of lecture | Education Access
+      operationId: deleteLectureUser
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+  /courses/{courseId}/lectures/{lectureId}/sessions:
+    get:
+      tags:
+        - lecture sessions
+      summary: get lecture sessions | Education Access
+      description: get sessions of lecture
+      operationId: getLectureSessions
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: return lecture sessions
+          schema:
+            $ref: "#/definitions/lectureSessions"
+    post:
+      tags:
+        - lecture sessions
+      summary: add a lecture session | Education Access
+      operationId: addLectureSession
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: body
+          name: lecture session
+          schema:
+            $ref: "#/definitions/lectureSessions"
+      responses:
+        200:
+          description: OK
+        400:
+          description: invalid input, object invalid
+  /courses/{courseId}/lectures/{lectureId}/sessions/{sessionId}:
+    get:
+      tags:
+        - lecture sessions
+      summary: get session of lecture | Education Access
+      operationId: getLectureSession
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/lectureSessions"
+    patch:
+      tags:
+        - lecture sessions
+      summary: edit session of lecture | Education Access
+      operationId: editLectureSession
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: body
+          name: session object
+          schema:
+            $ref: "#/definitions/lectureSessions"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/lectureSessions"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - lecture sessions
+      summary: delete session of lecture | Education Access
+      operationId: deleteLectureSession
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+  /courses/{courseId}/lectures/{lectureId}/sessions/{sessionId}/users:
+    post:
+      tags:
+        - lecture session users
+      summary: add a user to session of lecture | Education Access
+      operationId: addLectureSessionUser
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: body
+          name: user
+          description: the user object to add
+          required: true
+          schema:
+            $ref: "#/definitions/lectureSessionUsers"
+      responses:
+        201:
+          description: user added to session of lecture
+        400:
+          description: invalid input, object invalid
+  /courses/{courseId}/lectures/{lectureId}/sessions/{sessionId}/users/{userId}:
+    get:
+      tags:
+        - lecture session users
+      summary: get user data in session of lecture | Education Access
+      operationId: getLectureSessionUser
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/lectureSessionUsers"
+    patch:
+      tags:
+        - lecture session users
+      summary: edit user data in session of lecture | Education Access
+      operationId: editLectureSessionUser
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: path
+          name: sessionId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: body
+          name: user object
+          schema:
+            $ref: "#/definitions/user"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/lectureSessionUsers"
+        400:
+          description: invalid input, object invalid
+  /courses/{courseId}/lectures/{lectureId}/exams:
+    get:
+      tags:
+        - lecture exams
+      summary: get lecture exams | Education Access
+      description: get exams present in lecture
+      operationId: getLectureExams
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: return lecture exams
+          schema:
+            $ref: "#/definitions/exam"
+    post:
+      tags:
+        - lecture exams
+      summary: add a lecture exam | Education Access
+      operationId: addLectureExam
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: body
+          name: lecture exam
+          schema:
+            $ref: "#/definitions/exam"
+      responses:
+        200:
+          description: OK
+        400:
+          description: invalid input, object invalid
+  /courses/{courseId}/lectures/{lectureId}/exams/{examId}:
+    get:
+      tags:
+        - lecture exams
+      summary: get exam of lecture | Education Access
+      operationId: getLectureExam
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: path
+          name: examId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/exam"
+    patch:
+      tags:
+        - lecture exams
+      summary: edit exam of lecture | Education Access
+      operationId: editLectureExam
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: path
+          name: examId
+          type: integer
+          required: true
+        - in: body
+          name: exam object
+          schema:
+            $ref: "#/definitions/exam"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/exam"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - lecture exams
+      summary: delete exam of lecture | Education Access
+      operationId: deleteLectureExam
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: path
+          name: examId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+  /courses/{courseId}/lectures/{lectureId}/exams/{examId}/users:
+    post:
+      tags:
+        - lecture exam users
+      summary: add a user to exam of lecture | Education Access
+      operationId: addLectureExamUser
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: path
+          name: examId
+          type: integer
+          required: true
+        - in: body
+          name: user
+          description: the user object to add
+          required: true
+          schema:
+            $ref: "#/definitions/lectureExamUsers"
+      responses:
+        201:
+          description: user added to exam of lecture
+        400:
+          description: invalid input, object invalid
+  /courses/{courseId}/lectures/{lectureId}/exams/{examId}/users/{userId}:
+    get:
+      tags:
+        - lecture exam users
+      summary: get user data in exam of lecture | Education Access
+      operationId: getLectureExamUser
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: path
+          name: examId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/lectureExamUsers"
+    patch:
+      tags:
+        - lecture exam users
+      summary: edit user data in exam of lecture | Education Access
+      operationId: editLectureExamUser
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: courseId
+          type: integer
+          required: true
+        - in: path
+          name: lectureId
+          type: integer
+          required: true
+        - in: path
+          name: examId
+          type: integer
+          required: true
+        - in: path
+          name: userId
+          type: integer
+          required: true
+        - in: body
+          name: user object
+          schema:
+            $ref: "#/definitions/user"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/lectureExamUsers"
+        400:
+          description: invalid input, object invalid
+
+  /reports:
+    get:
+      tags:
+        - reports
+      summary: get all reports data | Owner field Access
+      operationId: getReports
+      produces:
+        - application/json
+      parameters:
+        - in: query
+          type: string
+          name: field
+          required: true
+          enum:
+            - camp
+            - heyat
+            - lecture
+        - in: query
+          type: integer
+          name: id
+          required: true
+          description: identifier of field
+      responses:
+        200:
+          description: return reports list data
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/report"
+        403:
+          description: Unauthorized Access
+    post:
+      tags:
+        - reports
+      summary: create new report | Owner field Access
+      operationId: addReport
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: query
+          name: field
+          type: string
+          required: true
+          enum:
+            - camp
+            - heyat
+            - lecture
+        - in: query
+          type: string
+          name: id
+          required: true
+          description: identifier of field
+        - in: body
+          name: report
+          description: the new report object
+          required: true
+          schema:
+            $ref: "#/definitions/report"
+      responses:
+        201:
+          description: report created
+        400:
+          description: invalid input, object invalid
+        403:
+          description: Unauthorized Access
+  /reports/{reportId}:
+    get:
+      tags:
+        - reports
+      summary: get report | Report Owner Access
+      operationId: getReport
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: reportId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/report"
+        403:
+          description: Unauthorized Access
+    patch:
+      tags:
+        - reports
+      summary: edit report | Report Owner Access
+      operationId: editReport
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: reportId
+          type: integer
+          required: true
+        - in: body
+          name: report object
+          schema:
+            $ref: "#/definitions/report"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/report"
+        400:
+          description: invalid input, object invalid
+        403:
+          description: Unauthorized Access
+    delete:
+      tags:
+        - reports
+      summary: delete report | Report Owner Access
+      operationId: deleteReport
+      parameters:
+        - in: path
+          name: reportId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+        403:
+          description: Unauthorized Access
+  /reports/{reportId}/multimedias:
+    get:
+      tags:
+        - report multimedias
+      summary: get report multimedias | Report Owner Access
+      description: get multimedias of report
+      operationId: getReportMultimedias
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: reportId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: return report multimedias
+          schema:
+            $ref: "#/definitions/multimedia"
+    post:
+      tags:
+        - report multimedias
+      summary: add a multimedia to report | Report Owner Access
+      operationId: addReportMultimedia
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: reportId
+          type: integer
+          required: true
+        - in: body
+          name: report multimedia
+          schema:
+            $ref: "#/definitions/multimedia"
+      responses:
+        200:
+          description: OK
+        400:
+          description: invalid input, object invalid
+  /reports/{reportId}/multimedias/{multimediaId}:
+    get:
+      tags:
+        - report multimedias
+      summary: get multimedia of report | Report Owner Access
+      operationId: getReportMultimedia
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: reportId
+          type: integer
+          required: true
+        - in: path
+          name: multimediaId
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/multimedia"
+    patch:
+      tags:
+        - report multimedias
+      summary: edit multimedia of report | Report Owner Access
+      operationId: editReportMultimedia
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: reportId
+          type: integer
+          required: true
+        - in: path
+          name: multimediaId
+          type: integer
+          required: true
+        - in: body
+          name: multimedia object
+          schema:
+            $ref: "#/definitions/multimedia"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/multimedia"
+        400:
+          description: invalid input, object invalid
+    delete:
+      tags:
+        - report multimedias
+      summary: delete multimedia of report | Report Owner Access
+      operationId: deleteReportMultimedia
+      parameters:
+        - in: path
+          name: reportId
+          type: integer
+          required: true
+        - in: path
+          name: multimediaId
+          type: integer
+          required: true
+      responses:
+        204:
+          description: Delete Successfully
+        400:
+          description: invalid input, object invalid
+
+definitions:
+  user:
+    type: object
+    required:
+      - username
+      - password
+      - email
+      - type
+    properties:
+      username:
+        type: string
+        example: Ali_Alavi
+      email:
+        type: string
+        format: email
+        example: ali.alavi@gmail.com
+      password:
+        type: string
+        format: password
+        writeOnly: true
+        example: 12345678
+      type:
+        type: string
+        enum:
+          - student
+          - officer
+      creation_date:
+        type: string
+        format: date-time
+        readOnly: true
+  userInfo:
+    type: object
+    properties:
+      nat_id:
+        type: string
+        minLength: 10
+        maxLength: 10
+        example: 0012345678
+      birth_date:
+        type: string
+        format: date
+      instagram:
+        type: string
+        example: Ali_Alavi
+      firstname:
+        type: string
+        example: Ali
+      lastname:
+        type: string
+        example: Alavi
+      fathername:
+        type: string
+        example: Taghi
+  studentInfo:
+    allOf:
+      - $ref: "#/defenitions/userInfo"
+      - type: object
+        required:
+          - group
+          - grade
+        properties:
+          school:
+            type: string
+          major:
+            type: string
+          last_average:
+            type: number
+          grade:
+            type: integer
+          group:
+            type: string
+  officerInfo:
+    allOf:
+      - $ref: "#/defenitions/userInfo"
+      - type: object
+        required:
+          - coop_start_date
+          - work_experience
+        properties:
+          coop_start_date:
+            type: string
+            format: date
+          work_experience:
+            type: integer
+  dial:
+    type: object
+    required:
+      - number
+      - type
+    properties:
+      number:
+        type: string
+        minLength: 11
+        example: 09123456789
+        uniqueItems: true
+      type:
+        type: string
+        enum:
+          - mobile
+          - home
+          - work
+  grade:
+    type: object
+    required:
+      - major
+      - college
+      - degree
+    properties:
+      major:
+        type: string
+      college:
+        type: string
+      degree:
+        type: string
+        enum:
+          - diploma
+          - bachelor
+          - master
+          - doctorate
+  role:
+    type: object
+    properties:
+      name:
+        type: string
+  message:
+    type: object
+    properties:
+      subject:
+        type: string
+      text:
+        type: string
+  messageAdmin:
+    type: object
+    required:
+      - subject
+      - text
+    properties:
+      subject:
+        type: string
+      text:
+        type: string
+  roleAdmin:
+    type: object
+    required:
+      - name
+    properties:
+      name:
+        type: string
+        enum:
+          - ADMIN
+          - CAMP
+          - SESSION
+          - HEYAT
+          - EDUCATION
+          - ACCOUNTING
+          - DOCUMENT
+          - FORM
+          - REPORT
+  session:
+    type: object
+    required:
+      - subject
+      - datetime
+      - done
+    properties:
+      subject:
+        type: string
+      datetime:
+        type: string
+        format: date-time
+      done:
+        type: boolean
+  sessionInfo:
+    type: object
+    properties:
+      number:
+        type: integer
+      kind:
+        type: string
+      location:
+        type: string
+      approvals:
+        type: string
+  sessionUser:
+    type: object
+    required:
+      - userId
+    properties:
+      userId:
+        type: integer
+      present:
+        type: boolean
+  task:
+    type: object
+    required:
+      - subject
+    properties:
+      subject:
+        type: string
+      description:
+        type: string
+      priority:
+        type: string
+        enum:
+          - high
+          - normal
+          - low
+      done:
+        type: boolean
+      done_time:
+        type: string
+        format: date-time
+  deadline:
+    type: object
+    required:
+      - expiration_datetime
+    properties:
+      expiration_datetime:
+        type: string
+        format: date-time
+  heyat:
+    type: object
+    required:
+      - type
+      - reason
+      - datetime
+    properties:
+      type:
+        type: string
+        enum:
+          - celebration
+          - mourning
+      reason:
+        type: string
+      datetime:
+        type: string
+        format: date-time
+      copmere:
+        type: string
+      speaker:
+        type: string
+      singer:
+        type: string
+      meal:
+        type: string
+  heyatUser:
+    type: object
+    required:
+      - userId
+    properties:
+      userId:
+        type: integer
+      present:
+        type: boolean
+  camp:
+    type: object
+    required:
+      - subject
+      - location
+      - go_time
+      - back_time
+      - cost_per_person
+    properties:
+      subject:
+        type: string
+      location:
+        type: string
+      go_time:
+        type: string
+        format: date-time
+      back_time:
+        type: string
+        format: date-time
+      cost_per_person:
+        type: string
+  campUser:
+    type: object
+    required:
+      - user_id
+    properties:
+      user_id:
+        type: integer
+      paid_value:
+        type: string
+  course:
+    type: object
+    required:
+      - name
+      - fac
+      - grade
+    properties:
+      name:
+        type: string
+      fac:
+        type: integer
+        minimum: 1
+        maximum: 4
+      grade:
+        type: integer
+      major:
+        type: string
+  lecture:
+    type: object
+    required:
+      - name
+      - start_time
+      - end_time
+      - teacher_id
+    properties:
+      name:
+        type: string
+      group:
+        type: string
+      teacher_id:
+        type: integer
+      start_time:
+        type: string
+        format: time
+      end_time:
+        type: string
+        format: time
+  lectureUsers:
+    type: object
+    required:
+      - student_id
+    properties:
+      student_id:
+        type: integer
+  lectureSessions:
+    type: object
+    required:
+      - datetime
+    properties:
+      datetime:
+        type: string
+        format: date-time
+      subject:
+        type: string
+      number:
+        type: integer
+      location:
+        type: string
+  lectureSessionUsers:
+    type: object
+    required:
+      - student_id
+    properties:
+      student_id:
+        type: integer
+      description:
+        type: string
+      present:
+        type: boolean
+      homework_mark:
+        type: integer
+  exam:
+    type: object
+    required:
+      - datetime
+      - type
+      - file
+    properties:
+      datetime:
+        type: string
+        format: date-time
+      type:
+        type: string
+        enum:
+          - quiz
+          - midterm
+          - final
+      file:
+        type: string
+  lectureExamUsers:
+    type: object
+    required:
+      - student_id
+      - score
+    properties:
+      student_id:
+        type: integer
+      score:
+        type: integer
+  report:
+    type: object
+    properties:
+      description:
+        type: string
+      creation_datetime:
+        type: string
+        format: date-time
+  multimedia:
+    type: object
+    required:
+      - path
+      - format
+    properties:
+      path:
+        type: string
+      format:
+        type: string
+        enum:
+          - mp3
+          - mp4
+          - xlsx
+          - docx
+          - pdf
+
+# Added by API Auto Mocking Plugin
+host: virtserver.swaggerhub.com
+basePath: /YHporkar/Saahat/1.0.0
+schemes:
+  - https
